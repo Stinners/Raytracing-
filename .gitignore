@@ -1,2 +1,4 @@
 *.ppm
 dist/main
+*.mod 
+*.o

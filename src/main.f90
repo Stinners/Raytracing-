@@ -49,18 +49,19 @@ contains
     ! we are just doing a simple gradient
     pure function ray_color(r) result(res)
         class(Ray), intent(in) :: r
-        real(8) :: res(3), unit_direction(3), sphere(3)
-        real :: t
+        real(8) :: res(3), unit_direction(3), sphere(3), normal(3)
+        real(8) :: t
 
         sphere = [0.0, 0.0, -1.0]
 
-        if (r % hit_sphere(sphere, 0.5)) then 
-            res = [1.0, 0.0, 0.0]
-            return 
+        t = r % hit_sphere(sphere, 0.5)
+        if (t > 0.0) then 
+            normal = unit_vec(r % at(t) - [0.0_8, 0.0_8, -1.0_8])
+            res = 0.5 * (normal+1)
+        else
+            unit_direction = unit_vec(r % direction)
+            t = 0.5 * (unit_direction(2)  + 1)
+            res = (1-t) * [1.0, 1.0, 1.0] + t * [0.5, 0.7, 1.0]
         end if 
-
-        unit_direction = unit_vec(r % direction)
-        t = 0.5 * (unit_direction(2)  + 1)
-        res = (1-t) * [1.0, 1.0, 1.0] + t * [0.5, 0.7, 1.0]
     end function 
 end program ray_trace 

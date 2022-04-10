@@ -7,7 +7,6 @@ module mod_Vec3
 
     public write_color
     public unit_vec
-
 contains 
 
     subroutine write_color(vec, handle)

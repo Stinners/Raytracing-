@@ -49,8 +49,15 @@ contains
     ! we are just doing a simple gradient
     pure function ray_color(r) result(res)
         class(Ray), intent(in) :: r
-        real(8) :: res(3), unit_direction(3)
+        real(8) :: res(3), unit_direction(3), sphere(3)
         real :: t
+
+        sphere = [0.0, 0.0, -1.0]
+
+        if (r % hit_sphere(sphere, 0.5)) then 
+            res = [1.0, 0.0, 0.0]
+            return 
+        end if 
 
         unit_direction = unit_vec(r % direction)
         t = 0.5 * (unit_direction(2)  + 1)

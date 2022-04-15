@@ -1,5 +1,5 @@
 program ray_trace 
-    use mod_vec3, only: write_color, unit_vec
+    use mod_vec3, only: write_color, unit_vec, random_in_unit_sphere
     use mod_ray, only: Ray
     use mod_camera, only: Camera_t, init_camera
     use mod_sphere, only: sphere_t
@@ -13,6 +13,7 @@ program ray_trace
     integer, parameter :: image_width = 400;
     integer, parameter :: image_height = int(image_width / aspect_ratio)
     integer, parameter :: samples_per_pixel = 100
+    integer, parameter :: max_depth = 50 
 
     ! Camera 
     type(Camera_t) camera 
@@ -25,7 +26,6 @@ program ray_trace
                                    sphere_t([0.0,-100.5, -1.0], 100.0)])
 
     camera = init_camera()
-
 
     ! Do Rendering 
     call render(image_width, image_height, hit_world)
@@ -51,7 +51,7 @@ contains
                     u = (real(i, kind=8) + random()) / (width-1)
                     v = (real(j, kind=8) + random()) / (height-1)
                     r = camera % get_ray(u, v)
-                    color = color + ray_color(r, world)
+                    color = color + ray_color(r, world, max_depth)
                 end do 
                 call write_color(color, samples_per_pixel)
             end do 
@@ -59,20 +59,27 @@ contains
 
     end subroutine render
 
-    function ray_color(r, world) result(res)
+    recursive function ray_color(r, world, depth) result(res)
         class(Ray), intent(in) :: r 
         class(World_t), intent(in) :: world 
+        integer, intent(in) :: depth
         type(hit_record_t) :: hit_record
-        real(8) :: unit_direction(3), t(3), res(3)
+        real(8) :: unit_direction(3), t(3), res(3), rand_target(3)
+        type(Ray) :: reflected_ray
 
-        if (world % hit(r, 0.0_8, 1e9_8, hit_record)) then 
-            res = 0.5 * (hit_record % normal + [1.0,1.0,1.0])
-            return 
+        if (depth <= 0) then 
+            res = [0.0, 0.0, 0.0]
+
+        else if (world % hit(r, 0.0001_8, 1e9_8, hit_record)) then 
+            rand_target = hit_record%point + hit_record%normal + random_in_unit_sphere()
+            reflected_ray = Ray(hit_record%point, rand_target - hit_record%point)
+            res = 0.5 * ray_color(reflected_ray, world, depth-1)
+
+        else 
+            unit_direction = unit_vec(r % direction)
+            t = 0.5 * (unit_direction(2) + 1.0)
+            res = (1.0-t) * [1.0, 1.0, 1.0] + t * [0.5, 0.7, 1.0]
         end if 
-
-        unit_direction = unit_vec(r % direction)
-        t = 0.5 * (unit_direction(2) + 1.0)
-        res = (1.0-t) * [1.0, 1.0, 1.0] + t * [0.5, 0.7, 1.0]
     end function ray_color
         
 end program ray_trace 

@@ -3,6 +3,7 @@
 
 module mod_Vec3 
     use iso_fortran_env, only: stdout => output_unit
+    use mod_random, only: random, random_double
     implicit none 
 
     public write_color
@@ -26,7 +27,7 @@ contains
         integer, intent(in) :: samples
         integer :: color(3)
         integer :: sink, i
-        real(8) :: color_scale, clamped 
+        real(8) :: color_scale, clamped, scaled_and_gamma
 
         if (present(handle)) then 
             sink = handle 
@@ -37,7 +38,8 @@ contains
         color_scale = 1.0 / samples
 
         do i = 1,3
-            clamped = clamp(vec(i) * color_scale, 0.0_8, 0.999_8)
+            scaled_and_gamma = sqrt(vec(i) * color_scale)
+            clamped = clamp(scaled_and_gamma, 0.0_8, 0.999_8)
             color(i) = int(256 * clamped)
         end do 
 
@@ -49,4 +51,24 @@ contains
         real(8) :: res(3)
         res = vec / norm2(vec)
     end function unit_vec
+
+    function random_vec() result(vec)
+        real(8) :: vec(3)
+        call random_number(vec)
+    end function random_vec
+
+    function random_scaled_vec(lmin, lmax) result(vec)
+        real(8), intent(in) :: lmin, lmax 
+        real(8) :: vec(3)
+        vec = [random_double(lmin, lmax), random_double(lmin, lmax), random_double(lmin, lmax)]
+    end function random_scaled_vec
+
+    function random_in_unit_sphere() result(vec) 
+        real(8) :: vec(3)
+        do 
+            vec = random_scaled_vec(-1.0_8, 1.0_8)
+            if (dot_product(vec, vec) < 1.0) exit
+        end do 
+    end function random_in_unit_sphere
+
 end module mod_Vec3

@@ -4,6 +4,9 @@ compile:
 	gfortran -c ./src/hittable.f90
 	gfortran -c ./src/sphere.f90
 	gfortran -c ./src/world.f90
+	gfortran -c ./src/random.f90
+	gfortran -c ./src/random.f90
+	gfortran -c ./src/camera.f90
 	gfortran -c ./src/main.f90 
 	gfortran *.o -fdefault-real-8 -o dist/main
 

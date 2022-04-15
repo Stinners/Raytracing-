@@ -1,8 +1,10 @@
 program ray_trace 
     use mod_vec3, only: write_color, unit_vec
     use mod_ray, only: Ray
+    use mod_camera, only: Camera_t, init_camera
     use mod_sphere, only: sphere_t
     use mod_world, only: World_t
+    use mod_random, only: random
     use mod_hittable, only: hit_record_t
     implicit none 
 
@@ -10,16 +12,10 @@ program ray_trace
     real(8), parameter :: aspect_ratio = 16.0 / 9.0
     integer, parameter :: image_width = 400;
     integer, parameter :: image_height = int(image_width / aspect_ratio)
+    integer, parameter :: samples_per_pixel = 100
 
     ! Camera 
-    real, parameter :: viewport_height = 2.0
-    real, parameter :: viewport_width = aspect_ratio * viewport_height
-    real, parameter :: focal_length = 1.0
-
-    real, parameter :: origin(3) = [0,0,0]
-    real, parameter :: horizontal(3) = [real(viewport_width), 0.0, 0.0]
-    real, parameter :: vertical(3) = [0.0, real(viewport_height), 0.0]
-    real, parameter :: lower_left_corner(3) = origin - horizontal/2 - vertical/2 - [0.0, 0.0, focal_length]
+    type(Camera_t) camera 
 
     ! Intit World 
     class(World_t), allocatable :: hit_world
@@ -27,6 +23,8 @@ program ray_trace
     ! Setup world
     hit_world = World_t(spheres = [sphere_t([0.0,   0.0, -1.0], 0.5), &
                                    sphere_t([0.0,-100.5, -1.0], 100.0)])
+
+    camera = init_camera()
 
 
     ! Do Rendering 
@@ -37,7 +35,7 @@ contains
     subroutine render(width, height, world)
         integer, intent(in) :: width, height
         class(World_t), intent(in) :: world
-        integer :: i, j
+        integer :: i, j, k
         real(8) :: u, v
         real(8) :: color(3)
         type(Ray) :: r
@@ -48,11 +46,14 @@ contains
         ! Looping over all possible rays
         do j = height-1, 0, -1
             do i = 0, width-1
-                u = real(i, kind=8) / (width-1)
-                v = real(j, kind=8) / (height-1)
-                r = Ray(origin = origin, direction = lower_left_corner + u * horizontal + v * vertical - origin)
-                color = ray_color(r, world)
-                call write_color(color)
+                color = [0.0, 0.0, 0.0]
+                do k = 1, samples_per_pixel
+                    u = (real(i, kind=8) + random()) / (width-1)
+                    v = (real(j, kind=8) + random()) / (height-1)
+                    r = camera % get_ray(u, v)
+                    color = color + ray_color(r, world)
+                end do 
+                call write_color(color, samples_per_pixel)
             end do 
         end do
 

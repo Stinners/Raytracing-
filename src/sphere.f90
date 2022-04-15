@@ -1,5 +1,5 @@
 module mod_sphere
-    use mod_hittable, only: hit_record_t, hittable
+    use mod_hittable, only: hit_record_t, hittable, material_t
     use mod_ray, only: Ray
     implicit none 
 
@@ -8,6 +8,7 @@ module mod_sphere
 
     type, extends(hittable) :: sphere_t
         real(8) :: center(3), radius
+        class(material_t), pointer :: material
     contains 
         procedure :: hit
     end type sphere_t
@@ -47,6 +48,7 @@ contains
         hit_record % t = root 
         hit_record % point = r % at(root)
         hit_record % normal = ((hit_record % point) - self % center) / (self % radius)
+        hit_record % mat_ptr => self % material
 
         hit = .true.
 

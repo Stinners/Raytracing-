@@ -3,6 +3,7 @@ compile:
 	gfortran -c ./src/vec3.f90
 	gfortran -c ./src/ray.f90
 	gfortran -c ./src/hittable.f90
+	gfortran -c ./src/materials/*
 	gfortran -c ./src/sphere.f90
 	gfortran -c ./src/world.f90
 	gfortran -c ./src/camera.f90

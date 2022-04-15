@@ -5,8 +5,16 @@ program ray_trace
     use mod_sphere, only: sphere_t
     use mod_world, only: World_t
     use mod_random, only: random
-    use mod_hittable, only: hit_record_t
+    use mod_hittable, only: hit_record_t, material_t
+    use mod_metal, only: metal_t
+    use mod_lambertian, only: lambertian_t 
     implicit none 
+
+! =========================================================================
+!
+!                        Data Declaration
+!
+! =========================================================================
 
     ! Image 
     real(8), parameter :: aspect_ratio = 16.0 / 9.0
@@ -18,14 +26,38 @@ program ray_trace
     ! Camera 
     type(Camera_t) camera 
 
-    ! Intit World 
+    ! Init World 
     class(World_t), allocatable :: hit_world
 
+    ! Materials 
+    class(material_t), allocatable :: material_ground, material_center
+    class(material_t), allocatable :: material_left, material_right
+
+! =========================================================================
+!
+!                        Variable Initalization
+!
+! =========================================================================
+
+    ! Setup Materials 
+    material_ground = lambertian_t([0.8, 0.8, 0.3])
+    material_center = lambertian_t([0.7, 0.3, 0.3])
+    material_left = metal_t([0.8, 0.8, 0.8])
+    material_right = metal_t([0.8, 0.6, 0.2])
+
     ! Setup world
-    hit_world = World_t(spheres = [sphere_t([0.0,   0.0, -1.0], 0.5), &
-                                   sphere_t([0.0,-100.5, -1.0], 100.0)])
+    hit_world = World_t(spheres = [sphere_t([0.0,   0.0, -1.0], 0.5,   material_center), &
+                                   sphere_t([0.0,-100.5, -1.0], 100.0, material_ground), &
+                                   sphere_t([-1.0,  0.0, -1.0], 0.5,   material_left),   &
+                                   sphere_t([ 1.0,  0.0, -1.0], 0.5,   material_right)])
 
     camera = init_camera()
+
+! =========================================================================
+!
+!                         Execution
+!
+! =========================================================================
 
     ! Do Rendering 
     call render(image_width, image_height, hit_world)
@@ -64,16 +96,18 @@ contains
         class(World_t), intent(in) :: world 
         integer, intent(in) :: depth
         type(hit_record_t) :: hit_record
-        real(8) :: unit_direction(3), t(3), res(3), rand_target(3)
-        type(Ray) :: reflected_ray
+        real(8) :: unit_direction(3), t(3), res(3), attenuation(3)
+        type(Ray) :: scattered
 
         if (depth <= 0) then 
             res = [0.0, 0.0, 0.0]
 
         else if (world % hit(r, 0.0001_8, 1e9_8, hit_record)) then 
-            rand_target = hit_record%point + hit_record%normal + random_in_unit_sphere()
-            reflected_ray = Ray(hit_record%point, rand_target - hit_record%point)
-            res = 0.5 * ray_color(reflected_ray, world, depth-1)
+            if (hit_record%mat_ptr%scatter (r, hit_record, attenuation, scattered)) then
+                res = attenuation * ray_color(scattered, world, depth-1)
+            else 
+                res = [0.0, 0.0, 0.0]
+            end if 
 
         else 
             unit_direction = unit_vec(r % direction)

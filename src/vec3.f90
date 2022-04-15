@@ -8,6 +8,9 @@ module mod_Vec3
 
     public write_color
     public unit_vec
+
+    real(8), parameter :: epsilon = 1e-8_8
+
 contains 
 
     real(8) function clamp(x, xmin, xmax)
@@ -70,5 +73,22 @@ contains
             if (dot_product(vec, vec) < 1.0) exit
         end do 
     end function random_in_unit_sphere
+
+    function random_unit_vector() result(vec)
+        real(8) :: vec(3)
+        vec = unit_vec(random_in_unit_sphere())
+    end function random_unit_vector
+
+    logical function near_zero(vec) 
+        real(8), intent(in) :: vec(3)
+        near_zero = sum(abs(vec)) < (3 * epsilon)
+    end function near_zero 
+
+    function reflect(v, n) result(outgoing)
+        real(8), intent(in) :: v(3), n(3)
+        real(8) :: outgoing(3)
+        outgoing = v - 2 * dot_product(v,n)*n
+    end function reflect
+
 
 end module mod_Vec3

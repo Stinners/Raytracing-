@@ -8,6 +8,7 @@ program ray_trace
     use mod_hittable, only: hit_record_t, material_t
     use mod_metal, only: metal_t
     use mod_lambertian, only: lambertian_t 
+    use mod_dielectric, only: dielectric_t 
     implicit none 
 
 ! =========================================================================
@@ -41,9 +42,9 @@ program ray_trace
 
     ! Setup Materials 
     material_ground = lambertian_t([0.8, 0.8, 0.3])
-    material_center = lambertian_t([0.7, 0.3, 0.3])
-    material_left = metal_t([0.8, 0.8, 0.8])
-    material_right = metal_t([0.8, 0.6, 0.2])
+    material_center = dielectric_t(1.5)
+    material_left = dielectric_t(1.5)
+    material_right = metal_t([0.8, 0.6, 0.2], 1.0)
 
     ! Setup world
     hit_world = World_t(spheres = [sphere_t([0.0,   0.0, -1.0], 0.5,   material_center), &

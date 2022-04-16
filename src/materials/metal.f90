@@ -1,14 +1,16 @@
 module mod_metal
     use mod_hittable, only: material_t, hit_record_t
     use mod_ray, only: Ray
-    use mod_vec3, only: random_unit_vector, reflect, unit_vec
+    use mod_vec3, only: random_unit_vector, reflect, unit_vec, random_in_unit_sphere
     implicit none 
 
     type, extends(material_t) :: metal_t
-        real(8) :: albedo(3)
+        real(8) :: albedo(3), fuzz
     contains 
         procedure :: scatter
     end type metal_t
+
+    ! TODO make a custom constructor for metal that contains the value of fuzz
 
 contains 
 
@@ -22,7 +24,7 @@ contains
         real(8) :: reflected(3)
 
         reflected = reflect(unit_vec(r % direction), record % normal)
-        scattered = Ray(record%point, reflected)
+        scattered = Ray(record%point, reflected + self%fuzz * random_in_unit_sphere())
         attenuation = self % albedo
 
         scatter = dot_product(scattered % direction, record % normal) > 0

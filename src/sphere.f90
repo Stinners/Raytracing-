@@ -21,7 +21,7 @@ contains
         real(8), intent(in) :: t_min, t_max
         class(hit_record_t), intent(out) :: hit_record
 
-        real(8) :: oc(3), a, half_b, c, discriminant, sqrtd, root 
+        real(8) :: oc(3), a, half_b, c, discriminant, sqrtd, root
 
         oc = r % origin - self % center 
         a = dot_product(r % direction, r % direction)
@@ -45,10 +45,12 @@ contains
             end if 
         end if 
 
+        ! TODO, pull this all into a custom constructor for hit_record_t
         hit_record % t = root 
         hit_record % point = r % at(root)
         hit_record % normal = ((hit_record % point) - self % center) / (self % radius)
         hit_record % mat_ptr => self % material
+        call hit_record%set_face_normal(r)
 
         hit = .true.
 

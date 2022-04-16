@@ -14,7 +14,10 @@ module mod_hittable
 
     type :: hit_record_t 
         real(8) :: point(3), normal(3), t
+        logical :: front_face
         class(material_t), pointer :: mat_ptr
+    contains
+        procedure :: set_face_normal
     end type hit_record_t
 
     type, abstract :: hittable
@@ -42,6 +45,16 @@ module mod_hittable
             class(hit_record_t), intent(out) :: hit_record
         end function has_hit
     end interface 
+
+contains 
+
+    subroutine set_face_normal(self, r)
+        class(hit_record_t), intent(inout) :: self 
+        class(Ray), intent(in) :: r 
+
+        self % front_face = dot_product(r%direction, self%normal) < 0 
+        self % normal = merge(self%normal, -self%normal, self%front_face)
+    end subroutine set_face_normal
 
 end module mod_hittable
 

@@ -1,7 +1,8 @@
 module mod_dielectric 
     use mod_hittable, only: material_t, hit_record_t
     use mod_ray, only: Ray
-    use mod_vec3, only: unit_vec
+    use mod_vec3, only: unit_vec, reflect
+    use mod_random, only: random
     implicit none 
 
     type, extends(material_t) :: dielectric_t
@@ -11,6 +12,14 @@ module mod_dielectric
     end type dielectric_t
 
 contains 
+
+    real(8) pure function reflectance(cosine, ref_idx)
+        real(8), intent(in) :: cosine, ref_idx
+        real(8) :: r0
+        r0 = (1-ref_idx) / (1+ref_idx)
+        r0 = r0**2
+        reflectance = r0 + (1-r0) * (1-cosine)**5
+    end function
 
     function refract(uv, n, etai_over_etai)  result(res)
         real(8), intent(in) :: uv(3), n(3)
@@ -32,15 +41,26 @@ contains
         real(8), intent(out) :: attenuation(3)
         type(Ray), intent(out) :: scattered
 
-        real(8), dimension(3) :: unit_direction, refracted
-        real(8) :: refraction_ratio
+        real(8), dimension(3) :: unit_direction, direction
+        real(8) :: refraction_ratio, cos_theta, sin_theta
+        logical :: cannot_refract
 
         attenuation = [1.0, 1.0, 1.0]
         refraction_ratio = merge(1.0/self%index_of_refraction, self%index_of_refraction, record%front_face)
 
-        unit_direction = unit_vec(r % direction)
-        refracted = refract(unit_direction, record%normal, refraction_ratio)
-        scattered = Ray(record%point, refracted)
+        unit_direction = unit_vec(r%direction)
+        cos_theta = min(dot_product(-unit_direction, record%normal), 1.0)
+        sin_theta = sqrt(1.0 - cos_theta*cos_theta)
+
+        cannot_refract = refraction_ratio * sin_theta > 1.0
+
+        if (cannot_refract .or. reflectance(cos_theta, refraction_ratio) > random()) then 
+            direction = reflect(unit_direction, record%normal)
+        else 
+            direction = refract(unit_direction, record%normal, refraction_ratio)
+        end if 
+
+        scattered = Ray(record%point, direction)
         scatter = .true.
     end function scatter
 

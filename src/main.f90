@@ -25,6 +25,8 @@ program ray_trace
     integer, parameter :: max_depth = 50 
 
     ! Camera 
+    real(8) :: dist_to_focus, aperture
+    real(8), dimension(3) :: lookfrom, lookat, vup, dist_to_f
     type(Camera_t) camera 
 
     ! Init World 
@@ -41,18 +43,26 @@ program ray_trace
 ! =========================================================================
 
     ! Setup Materials 
-    material_ground = lambertian_t([0.8, 0.8, 0.3])
-    material_center = dielectric_t(1.5)
+    material_ground = lambertian_t([0.8, 0.8, 0.0])
+    material_center = lambertian_t([0.1, 0.2, 0.5])
     material_left = dielectric_t(1.5)
-    material_right = metal_t([0.8, 0.6, 0.2], 1.0)
+    material_right = metal_t([0.8, 0.6, 0.2], 0.0)
 
     ! Setup world
-    hit_world = World_t(spheres = [sphere_t([0.0,   0.0, -1.0], 0.5,   material_center), &
-                                   sphere_t([0.0,-100.5, -1.0], 100.0, material_ground), &
-                                   sphere_t([-1.0,  0.0, -1.0], 0.5,   material_left),   &
-                                   sphere_t([ 1.0,  0.0, -1.0], 0.5,   material_right)])
+    hit_world = World_t(spheres = [sphere_t([ 0.0, -100.5, -10.0],  100,  material_ground), &
+                                   sphere_t([ 0.0,    0.0,  -1.0],  0.5,  material_center), &
+                                   sphere_t([-1.0,    0.0,  -1.0],  0.5,  material_left), &
+                                   sphere_t([-1.0,    0.0,  -1.0], -0.45, material_left), &
+                                   sphere_t([ 1.0,    0.0,  -1.0],  0.5, material_right)])
 
-    camera = init_camera()
+
+    ! Setup Camera 
+    lookfrom = [3.0, 3.0, 2.0]
+    lookat = [0.0, 0.0, -1.0]
+    vup = [0.0, 1.0, 0.0]
+    dist_to_focus = norm2(lookfrom - lookat)
+    aperture = 2.0
+    camera = init_camera(lookfrom, lookat, vup, 20.0_8, aspect_ratio, aperture, dist_to_focus)
 
 ! =========================================================================
 !

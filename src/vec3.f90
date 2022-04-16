@@ -74,6 +74,15 @@ contains
         end do 
     end function random_in_unit_sphere
 
+    function random_in_unit_disc() result(vec)
+        real(8) :: vec(3)
+        do 
+            vec = [random_double(-1.0_8, 1.0_8), random_double(-1.0_8, 1.0_8), 0.0_8]
+            if (dot_product(vec, vec) < 1.0) exit
+        end do
+    end function random_in_unit_disc
+
+
     function random_unit_vector() result(vec)
         real(8) :: vec(3)
         vec = unit_vec(random_in_unit_sphere())
@@ -90,5 +99,13 @@ contains
         outgoing = v - 2 * dot_product(v,n)*n
     end function reflect
 
+    pure function cross_product(u, v) 
+        real(8), intent(in) :: u(3), v(3)
+        real(8) :: cross_product(3)
+
+        cross_product(1) = u(2) * v(3) - u(3) * v(2)
+        cross_product(2) = u(3) * v(1) - u(1) * v(3)
+        cross_product(3) = u(1) * v(2) - u(2) * v(1)
+    end function cross_product
 
 end module mod_Vec3

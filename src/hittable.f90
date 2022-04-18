@@ -15,7 +15,7 @@ module mod_hittable
     type :: hit_record_t 
         real(8) :: point(3), normal(3), t
         logical :: front_face
-        class(material_t), pointer :: mat_ptr
+        class(material_t), allocatable :: mat_ptr
     contains
         procedure :: set_face_normal
     end type hit_record_t

@@ -5,6 +5,10 @@ module mod_dielectric
     use mod_random, only: random
     implicit none 
 
+    private 
+    public dielectric_t
+    public scatter
+
     type, extends(material_t) :: dielectric_t
         real(8) :: index_of_refraction 
     contains 

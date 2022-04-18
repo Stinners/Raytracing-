@@ -4,15 +4,35 @@ module mod_metal
     use mod_vec3, only: random_unit_vector, reflect, unit_vec, random_in_unit_sphere
     implicit none 
 
+    private 
+    public metal_t
+    public scatter
+
     type, extends(material_t) :: metal_t
         real(8) :: albedo(3), fuzz
     contains 
         procedure :: scatter
     end type metal_t
 
-    ! TODO make a custom constructor for metal that contains the value of fuzz
+    interface metal_t
+        module procedure :: init_metal
+    end interface metal_t
 
 contains 
+
+    function init_metal(color, fuzz) result(metal)
+        real(8), intent(in) :: color(3), fuzz
+        type(metal_t) :: metal
+
+        metal%albedo = color 
+        if (fuzz < 0.0) then 
+            metal % fuzz = 0.0
+        else if (fuzz > 1.0) then 
+            metal % fuzz = 1.0
+        else 
+            metal % fuzz = fuzz 
+        end if 
+    end function init_metal
 
     logical function scatter(self, r, record, attenuation, scattered)
         class(metal_t), intent(in) :: self

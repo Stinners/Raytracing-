@@ -6,9 +6,6 @@ module mod_Vec3
     use mod_random, only: random, random_double
     implicit none 
 
-    public write_color
-    public unit_vec
-
     real(8), parameter :: epsilon = 1e-8_8
 
 contains 
@@ -30,7 +27,8 @@ contains
         integer, intent(in) :: samples
         integer :: color(3)
         integer :: sink, i
-        real(8) :: color_scale, clamped, scaled_and_gamma
+        real(8) :: color_scale, clamped, scaled_and_gamma, scaled(3)
+        color = [0,0,0]
 
         if (present(handle)) then 
             sink = handle 
@@ -39,11 +37,12 @@ contains
         end if 
 
         color_scale = 1.0 / samples
+        scaled = vec * color_scale
 
         do i = 1,3
-            scaled_and_gamma = sqrt(vec(i) * color_scale)
-            clamped = clamp(scaled_and_gamma, 0.0_8, 0.999_8)
-            color(i) = int(256 * clamped)
+            scaled_and_gamma = sqrt(scaled(i))
+            clamped = clamp(scaled_and_gamma, 0.0001_8, 0.999_8)
+            color(i) = nint(255.99 * clamped)
         end do 
 
         write (sink, '(I0, 1X, I0, 1X, I0)') color(1), color(2), color(3)

@@ -5,6 +5,11 @@ module mod_camera
 
     real(8), parameter :: PI = 3.1415927
 
+    private 
+    public Camera_t
+    public init_camera
+    public get_ray
+
     type :: Camera_t
         real(8), dimension(3) :: origin, horizontal, vertical, lower_left_corner, u, v
         real(8) lens_radius

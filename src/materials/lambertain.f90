@@ -4,6 +4,10 @@ module mod_lambertian
     use mod_vec3, only: random_unit_vector, near_zero
     implicit none 
 
+    private 
+    public lambertian_t
+    public scatter
+
     type, extends(material_t) :: lambertian_t
         real(8) :: albedo(3)
     contains 

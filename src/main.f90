@@ -4,11 +4,12 @@ program ray_trace
     use mod_camera, only: Camera_t, init_camera
     use mod_sphere, only: sphere_t
     use mod_world, only: World_t
-    use mod_random, only: random
+    use mod_random, only: random, random_color, random_double
     use mod_hittable, only: hit_record_t, material_t
     use mod_metal, only: metal_t
     use mod_lambertian, only: lambertian_t 
     use mod_dielectric, only: dielectric_t 
+    use iso_fortran_env, only: error_unit
     implicit none 
 
 ! =========================================================================
@@ -18,10 +19,10 @@ program ray_trace
 ! =========================================================================
 
     ! Image 
-    real(8), parameter :: aspect_ratio = 16.0 / 9.0
-    integer, parameter :: image_width = 400;
+    real(8), parameter :: aspect_ratio = 3.0 / 2.0
+    integer, parameter :: image_width = 1200;
     integer, parameter :: image_height = int(image_width / aspect_ratio)
-    integer, parameter :: samples_per_pixel = 100
+    integer, parameter :: samples_per_pixel = 500
     integer, parameter :: max_depth = 50 
 
     ! Camera 
@@ -42,26 +43,15 @@ program ray_trace
 !
 ! =========================================================================
 
-    ! Setup Materials 
-    material_ground = lambertian_t([0.8, 0.8, 0.0])
-    material_center = lambertian_t([0.1, 0.2, 0.5])
-    material_left = dielectric_t(1.5)
-    material_right = metal_t([0.8, 0.6, 0.2], 0.0)
-
     ! Setup world
-    hit_world = World_t(spheres = [sphere_t([ 0.0, -100.5, -10.0],  100,  material_ground), &
-                                   sphere_t([ 0.0,    0.0,  -1.0],  0.5,  material_center), &
-                                   sphere_t([-1.0,    0.0,  -1.0],  0.5,  material_left), &
-                                   sphere_t([-1.0,    0.0,  -1.0], -0.45, material_left), &
-                                   sphere_t([ 1.0,    0.0,  -1.0],  0.5, material_right)])
-
+    call randomize_world(hit_world)
 
     ! Setup Camera 
-    lookfrom = [3.0, 3.0, 2.0]
-    lookat = [0.0, 0.0, -1.0]
+    lookfrom = [13.0, 2.0, 3.0]
+    lookat = [0.0, 0.0, 0.0]
     vup = [0.0, 1.0, 0.0]
-    dist_to_focus = norm2(lookfrom - lookat)
-    aperture = 2.0
+    dist_to_focus = 10.0
+    aperture = 0.1
     camera = init_camera(lookfrom, lookat, vup, 20.0_8, aspect_ratio, aperture, dist_to_focus)
 
 ! =========================================================================
@@ -83,6 +73,10 @@ contains
         real(8) :: color(3)
         type(Ray) :: r
 
+        integer :: total, tenth
+        total = height * width 
+        tenth = total / 100
+
         ! Write file header
         write (*, '(a, / I0, 1X, I0, / a)') 'P3', width, height, '255'
 
@@ -96,11 +90,21 @@ contains
                     r = camera % get_ray(u, v)
                     color = color + ray_color(r, world, max_depth)
                 end do 
+                call track_progress(total, tenth)
                 call write_color(color, samples_per_pixel)
             end do 
         end do
-
     end subroutine render
+
+    subroutine track_progress(total, tenth)
+        integer, intent(in) :: total , tenth
+        integer, save :: current = 0, percent = 0
+        current = current + 1
+        if (mod(current, tenth) == 0) then
+            percent = percent + 1
+            write(error_unit, "(I0, a)") percent, "% Done"
+        end if 
+    end subroutine track_progress
 
     recursive function ray_color(r, world, depth) result(res)
         class(Ray), intent(in) :: r 
@@ -126,5 +130,46 @@ contains
             res = (1.0-t) * [1.0, 1.0, 1.0] + t * [0.5, 0.7, 1.0]
         end if 
     end function ray_color
+
+    subroutine randomize_world(world) 
+        type(World_t), intent(inout), allocatable :: world
+
+        real :: choose_mat, fuzz, color(3), center(3)
+        integer :: a, b
+
+        allocate(world)
+        allocate(world%spheres(23*23+4))
+
+        ! Place big spheres 
+        call world%add(sphere_t([0.0, -1000.0, 0.0], 1000.0, lambertian_t([0.5, 0.5, 0.5])))
+        call world%add(sphere_t([ 0.0, 1.0, 0.0], 1.0, dielectric_t(1.5)))
+        call world%add(sphere_t([-4.0, 1.0, 0.0], 1.0, lambertian_t([0.4, 0.2, 0.1])))
+        call world%add(sphere_t([ 4.0, 1.0, 0.0], 1.0, metal_t([0.7, 0.6, 0.5], 0.0)))
+
+        ! Place random spheres
+        do a = -11, 11
+            do b = -11, 11
+                choose_mat = random()
+                center = [a + 0.6*random(), 0.2_8, b + 0.6*random()]
+
+                if (norm2(center - [4.0, 0.2, 0.0]) > 0.9) then
+
+                    if (choose_mat < 0.8) then 
+                        color = random_color() * random_color()
+                        call world%add(sphere_t(center, 0.2, lambertian_t(color)))
+
+                    else if (choose_mat < 0.95) then 
+                        fuzz = random_double(0.0_8, 0.5_8)
+                        color = random_color(0.5_8, 1.0_8)
+                        call world%add(sphere_t(center, 0.2, metal_t(color, fuzz)))
+
+                    else 
+                        call world%add(sphere_t(center, 0.2, dielectric_t(1.5)))
+                    end if 
+                end if 
+            end do
+        end do 
+        
+    end subroutine randomize_world
         
 end program ray_trace 

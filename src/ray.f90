@@ -1,6 +1,9 @@
 module mod_ray 
     implicit none 
 
+    private 
+    public Ray
+
     type :: Ray 
         real(8) :: origin(3)
         real(8) :: direction(3) 
